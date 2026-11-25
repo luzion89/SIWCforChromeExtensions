@@ -18,7 +18,6 @@ Bundle [`siwc/`](siwc) with your extension, register it in the extension service
 | [`siwc/background.js`](siwc/background.js) and [background options](siwc/background.d.ts) | Service worker integration and lifecycle management for sign-in, profiles, and requests. |
 | [`siwc/provider.js`](siwc/provider.js), [`siwc/callback.html`](siwc/callback.html), and [`siwc/store.js`](siwc/store.js) | OpenAI protocol and requests, the extension callback page, and IndexedDB credential storage. |
 | [`demo/`](demo) | SIWC Studio extension source. The demo ZIP includes these files and the SDK. |
-| [`scripts/package.py`](scripts/package.py) | Packages the SDK and demo separately using the Python 3 standard library. |
 
 ## Downloads
 
@@ -27,25 +26,27 @@ Bundle [`siwc/`](siwc) with your extension, register it in the extension service
 | **SIWC SDK** · `siwc-sdk-<version>.zip` | Extract and copy the included `siwc/` folder into your host extension. |
 | **SIWC Studio** · `siwc-demo-<version>.zip` | Extract into its own directory. The ZIP includes a root manifest, the Studio interface, and the matching SDK. |
 
-To build both ZIPs from a checkout, run `python3 scripts/package.py`. The archives are written to `dist/`.
-
 ## Use SIWC Studio
 
 Use desktop Chrome 121 or later. OpenAI determines model availability by account, region, and workspace. Click **English** or **简体中文** in the top right to switch languages at any time.
+
+Microsoft Edge has been checked for unpacked installation, language switching, and opening the OpenAI sign-in page. End-to-end authorization, model discovery, and streaming still need to be verified in Edge.
 
 ### Load the extension
 
 Extract the **SIWC Studio** release attachment. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the extracted folder containing `manifest.json`. Click **SIWC Studio** on the toolbar to open the workspace.
 
 <!-- screenshot: load-unpacked -->
-> Screenshot pending — Chrome's extensions page after loading the extension.
+![SIWC Studio in the browser extension manager](docs/images/studio-install.png)
+
+![SIWC Studio workspace in English](docs/images/studio-workspace.png)
 
 ### Sign in and grant access
 
 Click **Sign in with ChatGPT**, choose your account and workspace on OpenAI's page, and grant plan usage. On return, the account card shows **Connected**. Expand **Authorization options** to set a callback port or an account label.
 
 <!-- screenshot: openai-consent -->
-> Screenshot pending — OpenAI's plan usage consent page. Cover any account details and address bar parameters in screenshots for publication.
+![OpenAI sign-in opened from SIWC Studio](docs/images/studio-sign-in.png)
 
 ### List available models
 

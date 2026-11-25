@@ -18,7 +18,6 @@
 | [`siwc/background.js`](siwc/background.js) 和 [后台配置类型](siwc/background.d.ts) | Service Worker 接入，以及授权事务、账号和请求生命周期管理。 |
 | [`siwc/provider.js`](siwc/provider.js)、[`siwc/callback.html`](siwc/callback.html) 和 [`siwc/store.js`](siwc/store.js) | OpenAI 协议和调用、扩展内的回调页和 IndexedDB 凭证存储。 |
 | [`demo/`](demo) | SIWC Studio 演示扩展源码。演示 ZIP 包含这些文件和配套 SDK。 |
-| [`scripts/package.py`](scripts/package.py) | 使用 Python 3 标准库分别打包 SDK 和演示扩展。 |
 
 ## 下载
 
@@ -27,25 +26,27 @@
 | **SIWC SDK** · `siwc-sdk-<version>.zip` | 解压后，将其中的 `siwc/` 目录复制进宿主扩展。 |
 | **SIWC Studio** · `siwc-demo-<version>.zip` | 解压到单独的目录。ZIP 根目录包含扩展 manifest、Studio 界面和配套 SDK。 |
 
-从源码打包时，运行 `python3 scripts/package.py`，即可在 `dist/` 中得到两个 ZIP。
-
 ## 使用 SIWC Studio
 
 使用桌面 Chrome 121 或更新版本。模型可用性由 OpenAI 按账号、地区和工作区决定。点击右上角的 **English** 或 **简体中文** 可随时切换界面语言。
+
+Microsoft Edge 已验证解压安装、语言切换和打开 OpenAI 授权页。完整授权、模型查询和流式回复的 Edge 实测仍待完成。
 
 ### 加载扩展
 
 解压 **SIWC Studio** 附件，在 `chrome://extensions` 打开「开发者模式」，点击「加载未打包的扩展程序」，选择包含 `manifest.json` 的解压目录。点击工具栏中的 **SIWC Studio** 打开流式工作台。
 
 <!-- screenshot: load-unpacked -->
-> 截图待补：扩展加载成功后的 Chrome 扩展管理页。
+![浏览器扩展管理页中的 SIWC Studio](docs/images/studio-install.png)
+
+![SIWC Studio 英文工作台](docs/images/studio-workspace.png)
 
 ### 登录并授权
 
 点击「使用 ChatGPT 登录」，在 OpenAI 页面选择账号和工作区，并授予套餐用量权限。返回工作台后，「账号连接」显示「已连接」。通过「授权选项」可指定回调端口和账号备注。
 
 <!-- screenshot: openai-consent -->
-> 截图待补：OpenAI 套餐权限确认页。发布用截图请遮挡账号信息和地址栏参数。
+![从 SIWC Studio 打开的 OpenAI 登录入口](docs/images/studio-sign-in.png)
 
 ### 查看可用模型
 
