@@ -48,7 +48,6 @@ export function registerSiwcBackground({ appName, pages, ruleId = 1, redirectPor
   const callbackPage = new URL("./callback.html", import.meta.url).href;
   const dnr = chrome.declarativeNetRequest;
   const expiryAlarm = "siwc-expire-attempt";
-  const workerId = crypto.randomUUID();
   let queue = Promise.resolve();
   let activeRequests = new AbortController();
   let activeExchange;
@@ -110,7 +109,7 @@ export function registerSiwcBackground({ appName, pages, ruleId = 1, redirectPor
     const { transaction, url } = await authorize(hostId, { appName, port, registration, reconsent });
     const { id: tabId } = await chrome.tabs.create({ url: "about:blank" });
     try {
-      await writeRecord("attempt", { ...transaction, id, tabId, workerId, profileId: profile?.id, label: label?.trim() });
+      await writeRecord("attempt", { ...transaction, id, tabId, profileId: profile?.id, label: label?.trim() });
       const escaped = transaction.redirectUri.replace(/[.*+?^$(){}|[\]\\]/g, "\\$&");
       await dnr.updateSessionRules({
         removeRuleIds: [ruleId],
@@ -166,7 +165,7 @@ export function registerSiwcBackground({ appName, pages, ruleId = 1, redirectPor
       await saveProfiles(state);
       await finish(attempt.id, { result: snapshot(state) });
       notifySession(state);
-      return { recovered: attempt.workerId !== workerId, sharing: Boolean(updated.session) };
+      return { sharing: Boolean(updated.session) };
     } catch (error) {
       await finish(attempt.id, { error: publicError(error) });
       notifySession(await loadProfiles());

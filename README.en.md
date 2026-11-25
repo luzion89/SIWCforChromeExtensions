@@ -4,53 +4,62 @@
 
 This project adapts the Sign in with ChatGPT (SIWC) local SDK interface to Chrome Manifest V3 (MV3). A host extension can connect a user's ChatGPT account and, with their consent, use their ChatGPT plan to list available models and stream text. Sign-in, credential management, refresh, and API calls run inside the extension without a companion app, a server you maintain, or a developer API key.
 
-This is an independent compatibility MVP. The test extension and host integrations use the same ES modules. Integrate the SDK from source. The downloadable test artifact is a Chrome extension. [Official Sign in with ChatGPT developer guide](https://developers.openai.com/siwc/token-sharing-open-source)
+This independent browser adaptation ships in two releases. Choose **SIWC SDK** to embed the modules in your extension or **SIWC Studio** for the ready-to-load demo. The demo connects to OpenAI with the permissions granted by your ChatGPT account. [Official SIWC developer guide](https://developers.openai.com/siwc/token-sharing-open-source)
 
 ## Use it in your extension
 
-Bundle [`mvp/extension/siwc/`](mvp/extension/siwc) with your extension, register it in the extension service worker, and call `createChatGPT()` from a popup, options page, or side panel. The SDK has zero runtime dependencies and includes TypeScript declarations. Each host uses its own app name for authorization and keeps its accounts and credentials separate.
+Bundle [`siwc/`](siwc) with your extension, register it in the extension service worker, and call `createChatGPT()` from a popup, options page, or side panel. The SDK has zero runtime dependencies and includes TypeScript declarations. Each host uses its own app name for authorization and keeps its accounts and credentials separate.
 
 ## What's included
 
 | Location | Contents |
 | --- | --- |
-| [`siwc/client.js`](mvp/extension/siwc/client.js) and [type declarations](mvp/extension/siwc/client.d.ts) | Page client for sign-in, session subscriptions, account switching, model discovery, and streaming. |
-| [`siwc/background.js`](mvp/extension/siwc/background.js) and [background options](mvp/extension/siwc/background.d.ts) | Service worker integration and lifecycle management for sign-in, profiles, and requests. |
-| [`siwc/provider.js`](mvp/extension/siwc/provider.js), [`siwc/callback.html`](mvp/extension/siwc/callback.html), and [`siwc/store.js`](mvp/extension/siwc/store.js) | OpenAI protocol and requests, the extension callback page, and IndexedDB credential storage. |
-| [`mvp/extension/`](mvp/extension) | Loadable test extension built on the same SDK interfaces. |
-| [`mvp/browser.test.mjs`](mvp/browser.test.mjs) | Chrome integration tests backed by mock OAuth and API services. |
+| [`siwc/client.js`](siwc/client.js) and [type declarations](siwc/client.d.ts) | Page client for sign-in, session subscriptions, account switching, model discovery, and streaming. |
+| [`siwc/background.js`](siwc/background.js) and [background options](siwc/background.d.ts) | Service worker integration and lifecycle management for sign-in, profiles, and requests. |
+| [`siwc/provider.js`](siwc/provider.js), [`siwc/callback.html`](siwc/callback.html), and [`siwc/store.js`](siwc/store.js) | OpenAI protocol and requests, the extension callback page, and IndexedDB credential storage. |
+| [`demo/`](demo) | SIWC Studio extension source. The demo release includes these files and the SDK. |
+| [`scripts/package.py`](scripts/package.py) | Packages the SDK and demo separately using the Python 3 standard library. |
 
-## Run the test extension
+## Choose a release
 
-Use desktop Chrome 121 or later. Live inference requires the user to grant ChatGPT plan usage. OpenAI determines model availability by account, region, and workspace. The Gitea `v0.1.0-mvp` release contains an early test build. The steps below apply to the current source.
+| Download from Releases | Use |
+| --- | --- |
+| **SIWC SDK** · `siwc-sdk-<version>.zip` | Extract and copy the included `siwc/` folder into your host extension. |
+| **SIWC Studio** · `siwc-demo-<version>.zip` | Extract into its own directory. The ZIP includes a root manifest, the Studio interface, and the matching SDK. |
+
+To build both ZIPs from a checkout, run `python3 scripts/package.py`. The archives are written to `dist/`.
+
+## Use SIWC Studio
+
+Use desktop Chrome 121 or later. OpenAI determines model availability by account, region, and workspace.
 
 ### Load the extension
 
-Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the repository's `mvp/extension` directory. Click **SIWC Chrome MVP** on the Chrome toolbar to open the test page. Loading the extension does not require Node.js.
+Extract the **SIWC Studio** release attachment. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the extracted folder containing `manifest.json`. Click **SIWC Studio** on the toolbar to open the workspace.
 
 <!-- screenshot: load-unpacked -->
 > Screenshot pending — Chrome's extensions page after loading the extension.
 
 ### Sign in and grant access
 
-Click **打开 OpenAI 授权页** (Open OpenAI authorization). On OpenAI's page, select your account and workspace and allow the extension to use your ChatGPT plan. The default callback port is `51455`. Return to the test page and check for **OpenAI 会话已连接** (OpenAI session connected).
+Click **使用 ChatGPT 登录** (Sign in with ChatGPT), choose your account and workspace on OpenAI's page, and grant plan usage. On return, the account card shows **已连接** (Connected). Expand **授权选项** (Authorization options) to set a callback port or an account label.
 
 <!-- screenshot: openai-consent -->
 > Screenshot pending — OpenAI's plan usage consent page. Cover any account details and address bar parameters in screenshots for publication.
 
 ### List available models
 
-Click **获取模型列表** (Get model list). The test page shows the available model IDs and populates the model picker. If you granted identity access only, click **打开 OpenAI 授权页** again to grant plan usage.
+Click **获取模型** (Get models) and select a model available to the current account. For identity-only access, click **授权套餐用量** (Grant plan usage). Fetch the list again after switching accounts.
 
 <!-- screenshot: model-list -->
-> Screenshot pending — The model picker and returned model list.
+> Screenshot pending — The expanded model picker.
 
 ### Send text and watch the response stream
 
-Choose a model, keep the default prompt `Reply with exactly: SIWC OK` or enter your own, and click **发送请求** (Send request). Click **停止生成** (Stop generating) to cancel an active stream. After testing, use **断开连接** (Disconnect) to clear the selected account's local credentials and request revocation.
+Enter a message and click **发送消息** (Send). The response panel shows incoming text, the delta count and completion status. Stop an active stream to keep the partial output. **生成选项** (Generation options) supports instructions and conversation context. **新对话** (New conversation) clears the page’s current conversation.
 
 <!-- screenshot: streaming-demo -->
-> Screenshot pending — The selected model, test prompt, and generated response.
+> Screenshot pending — The selected model, prompt, and generated response.
 
 ## Integrate with a host extension
 
@@ -83,7 +92,7 @@ Merge these fields into the host's MV3 manifest. If the extension already has a 
 
 ### App name and identifiers
 
-The test extension sets `appName` to `SIWC Chrome MVP` in its own worker. In your host's `registerSiwcBackground()` call, use your actual product name consistently across installations. [Test extension worker](mvp/extension/worker.js) · [Official authorization parameters](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
+The demo extension sets `appName` to `SIWC Studio` in its own worker. In your host's `registerSiwcBackground()` call, use your actual product name consistently across installations. [Demo worker](demo/worker.js) · [Official authorization parameters](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
 
 | Field | Source and purpose |
 | --- | --- |
@@ -93,11 +102,11 @@ The test extension sets `appName` to `SIWC Chrome MVP` in its own worker. In you
 | Chrome extension ID and Node SDK `appId` | The Chrome extension ID and origin isolate storage. The Node SDK's `appId` names local file storage. The Chrome adaptation does not require this option. |
 | `profileId` and `label` | Use `profileId` to select a saved account. Use `label` to name it in the host's account list. Both are `signIn()` options. |
 
-Changing `appName` leaves existing OpenAI registrations under their current names. To test a new name, call `signIn({ newProfile: true })` from a user action to start a separate dynamic registration. [Official authorization parameters](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
+Changing `appName` leaves existing OpenAI registrations under their current names. To preview a new name, call `signIn({ newProfile: true })` from a user action to start a separate dynamic registration. [Official authorization parameters](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
 
 ### Make requests from an extension page
 
-In this example, `#connect`, `#send`, `#prompt`, and `#output` are the connect button, send button, text input, and output area. Save the script as `popup.js` and load it as an ES module from `popup.html`. The example selects the first available model. The test extension also demonstrates a model picker. [Test page markup](mvp/extension/index.html) · [Test page SDK calls](mvp/extension/index.js)
+In this example, `#connect`, `#send`, `#prompt`, and `#output` are the connect button, send button, text input, and output area. Save the script as `popup.js` and load it as an ES module from `popup.html`. The example selects the first available model. The demo extension also demonstrates a model picker. [Demo page markup](demo/index.html) · [Demo page SDK calls](demo/index.js)
 
 ```js
 import { createChatGPT } from "./siwc/client.js";
@@ -136,7 +145,7 @@ The popup may close when the authorization tab opens. The worker continues handl
 
 ### SDK API
 
-The page client implements nine core methods with the same names as the official `@siwc/local` SDK. See the next section for differences in the Chrome adaptation. [Official interface](https://github.com/openai/sign-in-with-chatgpt-devkit/blob/0a36fefeb913055c8c7a1a29b63d82b96b2e841a/packages/local/src/types.ts#L93) · [Chrome interface](mvp/extension/siwc/client.d.ts)
+The page client implements nine core methods with the same names as the official `@siwc/local` SDK. See the next section for differences in the Chrome adaptation. [Official interface](https://github.com/openai/sign-in-with-chatgpt-devkit/blob/0a36fefeb913055c8c7a1a29b63d82b96b2e841a/packages/local/src/types.ts#L93) · [Chrome interface](siwc/client.d.ts)
 
 | Method | Return value and behavior |
 | --- | --- |
@@ -206,23 +215,6 @@ The SDK manages credential storage. The worker saves credentials in extension In
 - The interface supports text. For multi-turn interactions, the host sends message history. The current interface omits images, tools, and history management. Model lookup and inference time out after 15 and 90 seconds respectively and are subject to the MV3 worker lifecycle. [SIWC preview limitations](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations) · [Chrome worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)
 - Authorization transactions expire after 10 minutes. Restarting Chrome interrupts authorization in progress. Changing the Chrome profile or extension ID, uninstalling the extension, or clearing its data can make a saved session unavailable.
 - OpenAI's public guide specifies a loopback listener and says to keep tokens in protected runtime storage and out of browser storage. This project's DNR bridge and encrypted IndexedDB persistence are compatibility experiments. Confirm OpenAI's support and the applicable terms before distributing this implementation for use. [Registration and callback guide](https://developers.openai.com/siwc/token-sharing-open-source/sign-in) · [Official credential storage guidance](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions#credential-security) · [SIWC terms](https://openai.com/policies/sign-in-with-chatgpt-terms/)
-
-## Verification and reproduction
-
-| Check | Result |
-| --- | --- |
-| Live OpenAI flow on the early MVP | On 2026-11-25, sign-in, code exchange, model discovery, and a single streamed response succeeded. `gpt-6.2-sol` returned `SIWC OK` with `response.completed`. Live refresh token rotation and recovery after a browser restart still need separate verification. |
-| Anonymous OpenAI preflight | With no local listener, both loopback port variants `51455` and `53601` received HTTP 302 redirects to OpenAI sign-in. |
-| Chrome integration tests on the current SDK | Mock credentials and requests exercise DNR tab and port matching, authorization checks, stream completion and cancellation, concurrent refresh, worker recovery, full Chrome restart, rejection of key export, legacy session migration, and account isolation. |
-
-The automated tests require Chrome and Node.js 22.12 or later. Set `SIWC_CHROME` to use a specific Chrome executable. The mock service uses port `18462` and the mock loopback callback uses `18463`.
-
-```bash
-npm ci
-npm test
-```
-
-`npm run preflight` repeats the anonymous check for both ports using the system's curl and prints the status code and sign-in destination path.
 
 ## Upstream and related projects
 

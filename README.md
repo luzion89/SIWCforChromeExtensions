@@ -4,53 +4,62 @@
 
 这个项目把 Sign in with ChatGPT（SIWC）的本地 SDK 接口适配到 Chrome Manifest V3（MV3）。宿主扩展可以让用户连接 ChatGPT 账号，并在用户同意后使用其 ChatGPT 套餐查询可用模型和流式生成文本。登录、凭证管理、续期和 API 调用都在扩展内运行，无需额外的本机应用、服务器或开发者 API key。
 
-目前是独立的兼容性 MVP。测试扩展和宿主扩展使用同一组 ES 模块。SDK 以源码形式集成，当前可下载的测试产物是 Chrome 扩展。 [官方 Sign in with ChatGPT 开发指南](https://developers.openai.com/siwc/token-sharing-open-source)
+项目提供两个独立发行版。开发宿主扩展请选 **SIWC SDK**，体验完整界面请选 **SIWC Studio**。演示扩展随包包含 SDK，直接使用你的 ChatGPT 账号和套餐授权连接 OpenAI。 [官方 SIWC 开发指南](https://developers.openai.com/siwc/token-sharing-open-source)
 
 ## 在你的扩展中使用
 
-把 [`mvp/extension/siwc/`](mvp/extension/siwc) 随宿主扩展打包，在扩展后台 Service Worker 注册，再从弹窗、选项页或侧边栏调用 `createChatGPT()`。SDK 无运行时依赖，附带 TypeScript 类型。每个宿主以自己的应用名称发起授权，独立保存自己的账号和凭证。
+把 [`siwc/`](siwc) 随宿主扩展打包，在扩展后台 Service Worker 注册，再从弹窗、选项页或侧边栏调用 `createChatGPT()`。SDK 无运行时依赖，附带 TypeScript 类型。每个宿主以自己的应用名称发起授权，独立保存自己的账号和凭证。
 
 ## 项目包含什么
 
 | 位置 | 内容 |
 | --- | --- |
-| [`siwc/client.js`](mvp/extension/siwc/client.js) 和 [类型声明](mvp/extension/siwc/client.d.ts) | 宿主页面调用入口，提供授权、状态订阅、账号切换、模型列表和流式推理。 |
-| [`siwc/background.js`](mvp/extension/siwc/background.js) 和 [后台配置类型](mvp/extension/siwc/background.d.ts) | Service Worker 接入，以及授权事务、账号和请求生命周期管理。 |
-| [`siwc/provider.js`](mvp/extension/siwc/provider.js)、[`siwc/callback.html`](mvp/extension/siwc/callback.html) 和 [`siwc/store.js`](mvp/extension/siwc/store.js) | OpenAI 协议和调用、扩展内的回调页和 IndexedDB 凭证存储。 |
-| [`mvp/extension/`](mvp/extension) | 用同一组 SDK 接口实现的可直接加载的测试扩展。 |
-| [`mvp/browser.test.mjs`](mvp/browser.test.mjs) | 使用模拟 OAuth 和 API 服务运行的 Chrome 集成测试。 |
+| [`siwc/client.js`](siwc/client.js) 和 [类型声明](siwc/client.d.ts) | 宿主页面调用入口，提供授权、状态订阅、账号切换、模型列表和流式推理。 |
+| [`siwc/background.js`](siwc/background.js) 和 [后台配置类型](siwc/background.d.ts) | Service Worker 接入，以及授权事务、账号和请求生命周期管理。 |
+| [`siwc/provider.js`](siwc/provider.js)、[`siwc/callback.html`](siwc/callback.html) 和 [`siwc/store.js`](siwc/store.js) | OpenAI 协议和调用、扩展内的回调页和 IndexedDB 凭证存储。 |
+| [`demo/`](demo) | SIWC Studio 演示扩展源码。演示发行版包含这些文件和配套 SDK。 |
+| [`scripts/package.py`](scripts/package.py) | 使用 Python 3 标准库分别打包 SDK 和演示扩展。 |
 
-## 运行测试扩展
+## 选择发行版
 
-使用桌面 Chrome 121 或更新版本。真实套餐调用需要用户授予套餐用量权限，模型可用性由 OpenAI 按账号、地区和工作区决定。Gitea 的 `v0.1.0-mvp` 是早期测试包。以下步骤对应当前源码。
+| 在 Releases 中下载 | 用法 |
+| --- | --- |
+| **SIWC SDK** · `siwc-sdk-<version>.zip` | 解压后，将其中的 `siwc/` 目录复制进宿主扩展。 |
+| **SIWC Studio** · `siwc-demo-<version>.zip` | 解压到单独的目录。ZIP 根目录包含扩展 manifest、Studio 界面和配套 SDK。 |
+
+从源码打包时，运行 `python3 scripts/package.py`，即可在 `dist/` 中得到两个 ZIP。
+
+## 使用 SIWC Studio
+
+使用桌面 Chrome 121 或更新版本。模型可用性由 OpenAI 按账号、地区和工作区决定。
 
 ### 加载扩展
 
-打开 `chrome://extensions`，启用「开发者模式」，点击「加载未打包的扩展程序」，选择仓库里的 `mvp/extension` 目录。点击工具栏中的 **SIWC Chrome MVP** 图标打开测试页。加载扩展无需安装 Node.js。
+解压 **SIWC Studio** 附件，在 `chrome://extensions` 打开「开发者模式」，点击「加载未打包的扩展程序」，选择包含 `manifest.json` 的解压目录。点击工具栏中的 **SIWC Studio** 打开流式工作台。
 
 <!-- screenshot: load-unpacked -->
 > 截图待补：扩展加载成功后的 Chrome 扩展管理页。
 
 ### 登录并授权
 
-点击「打开 OpenAI 授权页」，在 OpenAI 页面选择账号和工作区，确认允许扩展使用 ChatGPT 套餐。默认回调端口为 `51455`。回到测试页，确认状态为「OpenAI 会话已连接」。
+点击「使用 ChatGPT 登录」，在 OpenAI 页面选择账号和工作区，并授予套餐用量权限。返回工作台后，「账号连接」显示「已连接」。通过「授权选项」可指定回调端口和账号备注。
 
 <!-- screenshot: openai-consent -->
 > 截图待补：OpenAI 套餐权限确认页。发布用截图请遮挡账号信息和地址栏参数。
 
 ### 查看可用模型
 
-点击「获取模型列表」。测试页会显示可用模型的标识符，并更新模型下拉菜单。若只授予了登录身份权限，再点击「打开 OpenAI 授权页」补授套餐用量权限。
+点击「获取模型」，从下拉菜单中选择当前账号可用的模型。若仅授予了身份权限，点击「授权套餐用量」补授权限。切换账号后请重新获取模型。
 
 <!-- screenshot: model-list -->
-> 截图待补：模型下拉菜单和返回的模型列表。
+> 截图待补：展开的模型下拉菜单。
 
 ### 发送文本并观察流式输出
 
-选择一个模型，保留默认提示词 `Reply with exactly: SIWC OK` 或输入自己的文本，然后点击「发送请求」。生成期间可点击「停止生成」。测试结束后，可以用「断开连接」清除当前账号的本地凭证并请求撤销授权。
+输入消息，点击「发送消息」。在「流式回复」中可以看到实际增量、完成状态和中途停止后保留的文本。「生成选项」支持模型指令和多轮上下文。「新对话」清空当前页面的对话历史。
 
 <!-- screenshot: streaming-demo -->
-> 截图待补：所选模型、测试提示词和生成结果。
+> 截图待补：所选模型、输入的消息和生成结果。
 
 ## 集成到宿主扩展
 
@@ -83,7 +92,7 @@ registerSiwcBackground({
 
 ### 应用名称与标识符
 
-测试扩展在自己的 Worker 中把 `appName` 设为 `SIWC Chrome MVP`。宿主接入时，在自己的 `registerSiwcBackground()` 中填写实际产品名称，并在各安装实例中保持一致。 [测试扩展 Worker](mvp/extension/worker.js) · [官方授权参数](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
+演示扩展在自己的 Worker 中把 `appName` 设为 `SIWC Studio`。宿主接入时，在自己的 `registerSiwcBackground()` 中填写实际产品名称，并在各安装实例中保持一致。 [演示扩展 Worker](demo/worker.js) · [官方授权参数](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
 
 | 字段 | 来源和用途 |
 | --- | --- |
@@ -93,11 +102,11 @@ registerSiwcBackground({
 | Chrome 扩展 ID 与 Node SDK 的 `appId` | Chrome 的扩展 ID 和扩展域负责数据隔离。Node SDK 的 `appId` 用于本地文件存储命名，Chrome 版无需配置这个字段。 |
 | `profileId` 与 `label` | `profileId` 选择 SDK 中已有的账号，`label` 设置宿主账号列表中的本地名称。这两个字段都可传给 `signIn()`。 |
 
-更改 `appName` 不会重命名已有的 OpenAI 注册。测试新名称时，可在用户点击后调用 `signIn({ newProfile: true })`，发起一次独立的动态注册。 [官方授权参数](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
+更改 `appName` 不会重命名已有的 OpenAI 注册。预览新名称时，可在用户点击后调用 `signIn({ newProfile: true })`，发起一次独立的动态注册。 [官方授权参数](https://developers.openai.com/siwc/token-sharing-open-source/sign-in#2-start-authorization)
 
 ### 从页面发起请求
 
-以下代码示例中的 `#connect`、`#send`、`#prompt` 和 `#output` 对应宿主页面的连接按钮、发送按钮、文本输入和输出区。将代码保存为 `popup.js`，并从 `popup.html` 作为 ES 模块加载。示例直接选用第一个可用模型，测试扩展也演示了如何提供模型选择器。 [测试页源码](mvp/extension/index.html) · [测试页的 SDK 调用](mvp/extension/index.js)
+以下代码示例中的 `#connect`、`#send`、`#prompt` 和 `#output` 对应宿主页面的连接按钮、发送按钮、文本输入和输出区。将代码保存为 `popup.js`，并从 `popup.html` 作为 ES 模块加载。示例直接选用第一个可用模型，演示扩展也演示了如何提供模型选择器。 [演示页源码](demo/index.html) · [演示页的 SDK 调用](demo/index.js)
 
 ```js
 import { createChatGPT } from "./siwc/client.js";
@@ -136,7 +145,7 @@ document.querySelector("#send").onclick = async () => {
 
 ### SDK 接口
 
-页面客户端提供九个与官方 `@siwc/local` 同名的核心方法。Chrome 的适配差异见下节。 [官方接口定义](https://github.com/openai/sign-in-with-chatgpt-devkit/blob/0a36fefeb913055c8c7a1a29b63d82b96b2e841a/packages/local/src/types.ts#L93) · [Chrome 接口定义](mvp/extension/siwc/client.d.ts)
+页面客户端提供九个与官方 `@siwc/local` 同名的核心方法。Chrome 的适配差异见下节。 [官方接口定义](https://github.com/openai/sign-in-with-chatgpt-devkit/blob/0a36fefeb913055c8c7a1a29b63d82b96b2e841a/packages/local/src/types.ts#L93) · [Chrome 接口定义](siwc/client.d.ts)
 
 | 接口 | 返回值与行为 |
 | --- | --- |
@@ -206,23 +215,6 @@ DNR 回环桥接参考了 Loom.js 的 Codex 实验，本项目接入的是 SIWC 
 - 当前接口支持文本。多轮对话由宿主传入消息历史，图片、工具调用和会话历史管理暂未提供。模型查询与推理的请求时限分别为 15 秒和 90 秒，同时受 MV3 Worker 生命周期约束。 [SIWC 预览限制](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations) · [Chrome Worker 生命周期](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)
 - 授权事务有效期为 10 分钟，浏览器重启后需重新发起尚未完成的授权。更换 Chrome 配置或扩展 ID、卸载扩展、清除扩展数据可能使已保存的会话无法恢复。
 - OpenAI 的公开指南要求使用回环监听，并明确要求 token 保存在受保护的运行时存储、避开浏览器存储。本项目的 DNR 桥接和 IndexedDB 密文持久化属于兼容性实验，正式分发使用前需确认 OpenAI 对该实现的支持及适用条款。 [注册与回调指南](https://developers.openai.com/siwc/token-sharing-open-source/sign-in) · [官方凭证存储要求](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions#credential-security) · [SIWC 服务条款](https://openai.com/policies/sign-in-with-chatgpt-terms/)
-
-## 验证与复现
-
-| 验证方式 | 结果 |
-| --- | --- |
-| 早期 MVP 的真实 OpenAI 测试 | 在 2026-11-25 完成授权、换码、模型查询和单轮流式推理。用 `gpt-6.2-sol` 得到 `SIWC OK`，收到 `response.completed`。真实 refresh token 轮换和重启后恢复仍待单独验证。 |
-| 匿名 OpenAI 预检 | 无本机监听时，两个回环端口 `51455` 和 `53601` 的入口均返回 HTTP 302，跳转到 OpenAI 登录页。 |
-| 当前 SDK 的 Chrome 集成测试 | 使用模拟凭证和请求验证 DNR 的标签页与端口隔离、授权校验、流式完成和取消、并发续期、Worker 恢复、Chrome 完整重启、密钥不可导出、旧会话迁移和账号隔离。 |
-
-自动化测试需要 Chrome 和 Node.js 22.12 或更新版本。可通过 `SIWC_CHROME` 指定 Chrome 可执行文件。模拟服务使用端口 `18462`，模拟回环回调使用 `18463`。
-
-```bash
-npm ci
-npm test
-```
-
-`npm run preflight` 用系统的 curl 复现两个端口的匿名预检，输出状态码和登录目标路径。
 
 ## 上游与相关项目
 

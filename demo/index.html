@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIWC Studio · 流式工作台</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>SIWC Studio</div>
+    <a href="https://chatgpt.com/settings/usage" target="_blank" rel="noreferrer">管理套餐用量 ↗</a>
+  </header>
+  <main>
+    <section class="hero">
+      <div><p class="eyebrow">SIGN IN WITH CHATGPT</p><h1>流式工作台</h1>
+      <p>连接你的 ChatGPT 账号，选择模型，实时查看回复。</p></div>
+      <div class="waves" aria-hidden="true"></div>
+    </section>
+    <div class="workspace">
+      <aside class="panel account">
+        <div class="section-head"><h2>账号连接</h2><span class="badge" id="status" role="status">读取中</span></div>
+        <label for="profile">当前账号</label><select id="profile" disabled><option>尚未连接账号</option></select>
+        <button class="primary wide" id="start" disabled>使用 ChatGPT 登录</button>
+        <button class="wide" id="cancel-sign-in" hidden>取消授权</button>
+        <div class="account-actions"><button id="new-profile" hidden>添加账号</button><button id="disconnect" hidden>断开连接</button></div>
+        <details class="settings"><summary>授权选项</summary>
+          <label for="port">回调端口</label><input id="port" type="number" min="1024" max="65535" required>
+          <label for="label">账号备注（可选）</label><input id="label" type="text" placeholder="例如：工作账号">
+        </details>
+        <p id="account-note" class="hint" role="status"></p>
+      </aside>
+      <div class="editor">
+        <section class="panel">
+          <div class="section-head"><h2>文本生成</h2><span class="caption" lang="en">Responses API</span></div>
+          <form id="compose">
+            <label for="model">模型</label><div class="model-row"><select id="model" disabled><option value="">连接后获取模型</option></select><button id="models" type="button" disabled>获取模型</button></div>
+            <label for="prompt">消息</label><textarea id="prompt" rows="3" placeholder="输入想发给模型的内容…" required></textarea>
+            <details class="options"><summary>生成选项</summary>
+              <label for="instructions">模型指令（可选）</label><textarea id="instructions" rows="2" placeholder="例如：用简洁的中文回答。"></textarea>
+              <label class="check"><input id="context" type="checkbox" checked> 携带本次对话上下文</label>
+            </details>
+            <div class="compose-actions"><span class="hint" id="turns">当前对话 · 0 轮</span>
+              <button id="stop-response" type="button" hidden>停止生成</button><button class="primary" id="send" disabled>发送消息 ↑</button></div>
+          </form>
+        </section>
+        <section class="panel result">
+          <div class="section-head"><h2>流式回复</h2><span id="stream-state" class="badge" role="status">等待输入</span></div>
+          <pre id="output" tabindex="0" aria-label="模型回复">回复将逐段显示在这里。</pre>
+          <div class="result-foot"><span class="caption" id="metrics"></span><button class="subtle" id="clear" disabled>新对话</button></div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="index.js"></script>
+</body>
+</html>

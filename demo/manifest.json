@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "SIWC Studio",
+  "version": "0.2.0",
+  "minimum_chrome_version": "121",
+  "background": {
+    "service_worker": "worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "SIWC Studio"
+  },
+  "options_page": "index.html",
+  "permissions": [
+    "alarms",
+    "declarativeNetRequestWithHostAccess",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "https://auth.openai.com/*",
+    "https://api.openai.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "siwc/callback.html"
+      ],
+      "matches": [
+        "http://127.0.0.1/*",
+        "https://auth.openai.com/*"
+      ]
+    }
+  ],
+  "description": "通过 ChatGPT 账号连接可用模型，使用 SIWC SDK 生成流式文本。"
+}

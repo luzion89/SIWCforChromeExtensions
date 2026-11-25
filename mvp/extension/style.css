@@ -1,5 +1,0 @@
-:root { color-scheme: light dark; font: 16px system-ui, sans-serif; }
-main { max-width: 42rem; margin: 3rem auto; padding-inline: 1.25rem; }
-button, input { font: inherit; padding: 0.45rem 0.65rem; }
-form { margin-top: 1.5rem; }
-pre { white-space: pre-wrap; }
