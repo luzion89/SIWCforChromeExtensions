@@ -5,24 +5,24 @@
   <link rel="stylesheet" href="style.css">
   <main>
     <h1>SIWC Chrome MVP</h1>
-    <label for="mode">授权环境</label>
-    <select id="mode">
-      <option value="mock">本机模拟</option>
-      <option value="openai">OpenAI 实验</option>
-    </select>
     <label for="port">回调端口</label>
-    <input id="port" type="number" min="1024" max="65535" value="18463">
-    <p id="notice">模拟模式只使用测试凭证。</p>
+    <input id="port" type="number" min="1024" max="65535" required>
+    <p>在 OpenAI 页面同意使用你的 ChatGPT 套餐。当前浏览器配置会保留加密授权，可随时断开连接。</p>
     <p role="status" id="status">读取会话…</p>
-    <button id="start">打开模拟授权页</button>
+    <button id="start">打开 OpenAI 授权页</button>
+    <button id="cancel-sign-in" hidden>取消授权</button>
+    <button id="new-profile">添加账号</button>
+    <label for="profile">账号</label>
+    <select id="profile"></select>
     <button id="models">获取模型列表</button>
     <button id="disconnect">断开连接</button>
     <form>
       <label for="model">模型</label>
       <select id="model" required></select>
       <label for="prompt">测试输入</label>
-      <input id="prompt" value="请返回一条模拟结果" required>
-      <button>发送请求</button>
+      <input id="prompt" value="Reply with exactly: SIWC OK" required>
+      <button type="submit">发送请求</button>
+      <button id="stop-response" type="button" hidden>停止生成</button>
     </form>
     <pre id="output" aria-live="polite"></pre>
   </main>

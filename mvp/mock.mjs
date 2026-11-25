@@ -1,7 +1,15 @@
 import { createHash, generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { createServer } from "node:http";
-import { pathToFileURL } from "node:url";
-import { callback, callbackForPort, issuer, resource } from "./extension/protocol.js";
+import { callbackForPort } from "./extension/siwc/protocol.js";
+
+const issuer = "http://127.0.0.1:18462";
+const resource = issuer + "/v1";
+export const fixturePort = 18463;
+const callback = callbackForPort(fixturePort);
+export const fixtureProvider = {
+  issuer, resource, authorize: issuer + "/authorize", token: issuer + "/token",
+  jwks: issuer + "/jwks", revoke: issuer + "/revoke",
+};
 
 const clientId = "oaiapp_fixture";
 const grantedScope = "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct";
@@ -10,27 +18,30 @@ const keyId = "fixture-rsa";
 
 export async function startFixture() {
   const codes = new Map();
+  const clients = new Set();
   const accessTokens = new Map();
   const refreshTokens = new Map();
   const counters = { exchange: 0, refresh: 0, models: 0, responses: 0 };
+  const behavior = { failJwks: false, refreshIdentity: false, refreshError: undefined };
   const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
   const jwk = { ...publicKey.export({ format: "jwk" }), kid: keyId, alg: "RS256", use: "sig" };
   const jwtPart = value => Buffer.from(JSON.stringify(value)).toString("base64url");
 
-  function mint(nonce, invalidIdentity) {
+  function mint(issuedClient, nonce, invalidIdentity, includeIdentity = Boolean(nonce)) {
     const access = randomUUID();
     const refresh = randomUUID();
     const expiresIn = nonce ? 1 : 3600;
-    accessTokens.set(access, Date.now() + expiresIn * 1000);
-    refreshTokens.set(refresh, access);
+    accessTokens.set(access, { expiresAt: Date.now() + expiresIn * 1000, clientId: issuedClient });
+    refreshTokens.set(refresh, { access, clientId: issuedClient });
     const response = {
       token_type: "Bearer", expires_in: expiresIn, scope: grantedScope,
       access_token: access, refresh_token: refresh,
     };
-    if (nonce) {
+    if (includeIdentity) {
       const header = jwtPart({ alg: "RS256", kid: keyId });
       const claims = jwtPart({
-        iss: issuer, aud: clientId, sub: "fixture-user",
+        iss: issuer, aud: issuedClient, sub: issuedClient + "-user",
+        email: issuedClient + "@example.test",
         nonce: invalidIdentity ? "wrong-nonce" : nonce,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 600,
@@ -63,7 +74,7 @@ export async function startFixture() {
       const redirectUri = query("redirect_uri");
       const target = new URL(redirectUri);
       if (redirectUri !== callbackForPort(Number(target.port)) || target.origin === issuer ||
-          query("client_id") !== "dynamic_agent_client" ||
+          (query("client_id") !== "dynamic_agent_client" && !clients.has(query("client_id"))) ||
           query("resource") !== resource || query("response_type") !== "code" ||
           query("code_challenge_method") !== "S256" || query("scope") !== grantedScope ||
           !query("ext_agent_host_id")?.startsWith("urn:uuid:") ||
@@ -71,7 +82,7 @@ export async function startFixture() {
       const attempt = randomUUID();
       codes.set(attempt, {
         state: query("state"), nonce: query("nonce"), challenge: query("code_challenge"),
-        redirectUri,
+        redirectUri, initial: query("client_id") === "dynamic_agent_client", clientId: query("client_id"),
         expiresAt: Date.now() + 300_000,
       });
       return res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(
@@ -85,11 +96,18 @@ export async function startFixture() {
       const grant = codes.get(query("id"));
       if (!grant || grant.code || grant.expiresAt <= Date.now()) return invalid();
       if (query("probe") === "wrong-state") return redirect(grant.redirectUri + "?state=invalid&code=mock&client_id=" + clientId);
+      if (grant.initial) {
+        grant.clientId = clients.size === 0 ? clientId : clientId + "-" + (clients.size + 1);
+        clients.add(grant.clientId);
+      }
       grant.code = randomUUID();
       grant.invalidIdentity = query("probe") === "wrong-nonce";
+      grant.identityOnly = query("probe") === "identity-only";
       codes.delete(query("id"));
       codes.set(grant.code, grant);
-      return redirect(grant.redirectUri + "?" + new URLSearchParams({ code: grant.code, state: grant.state, client_id: clientId }));
+      return redirect(grant.redirectUri + "?" + new URLSearchParams({
+        code: grant.code, state: grant.state, ...(grant.initial ? { client_id: grant.clientId } : {}),
+      }));
     }
 
     if (url.pathname === "/probe") {
@@ -97,55 +115,72 @@ export async function startFixture() {
       return redirect(url + "?probe=synthetic");
     }
     if (url.pathname === new URL(callback).pathname) return res.end("wrong port remained on fixture");
-    if (url.pathname === "/jwks") return json({ keys: [jwk] });
+    if (url.pathname === "/jwks") return behavior.failJwks ? json({ error: "unavailable" }, 503) : json({ keys: [jwk] });
 
     if (url.pathname === "/token" && req.method === "POST") {
       const form = new URLSearchParams(await body());
-      if (form.get("client_id") !== clientId || form.get("resource") !== resource) return invalid();
+      const issuedClient = form.get("client_id");
+      if (!clients.has(issuedClient) || form.get("resource") !== resource) return invalid();
       if (form.get("grant_type") === "authorization_code") {
         const code = form.get("code");
         const grant = codes.get(code);
         const challenge = createHash("sha256").update(form.get("code_verifier") ?? "").digest("base64url");
-        if (!grant?.code || grant.expiresAt <= Date.now() || form.get("redirect_uri") !== grant.redirectUri ||
+        if (!grant?.code || grant.clientId !== issuedClient || grant.expiresAt <= Date.now() || form.get("redirect_uri") !== grant.redirectUri ||
             challenge !== grant.challenge) return invalid();
         codes.delete(code);
         counters.exchange++;
-        return json(mint(grant.nonce, grant.invalidIdentity));
+        const data = mint(issuedClient, grant.nonce, grant.invalidIdentity);
+        return json(grant.identityOnly ? { scope: "openid profile email", id_token: data.id_token } : data);
       }
       if (form.get("grant_type") === "refresh_token") {
+        if (behavior.refreshError) return json({ error: behavior.refreshError }, 400);
         const token = form.get("refresh_token");
-        const oldAccess = refreshTokens.get(token);
-        if (!oldAccess) return invalid();
+        const old = refreshTokens.get(token);
+        if (old?.clientId !== issuedClient) return invalid();
         refreshTokens.delete(token);
-        accessTokens.delete(oldAccess);
+        accessTokens.delete(old.access);
         counters.refresh++;
-        return json(mint());
+        return json(mint(issuedClient, undefined, false, behavior.refreshIdentity));
       }
       return invalid();
     }
 
     if (url.pathname === "/revoke" && req.method === "POST") {
       const form = new URLSearchParams(await body());
-      if (form.get("client_id") !== clientId || form.get("token_type_hint") !== "refresh_token") return invalid();
+      if (!clients.has(form.get("client_id")) || form.get("token_type_hint") !== "refresh_token") return invalid();
       const token = form.get("token");
-      accessTokens.delete(refreshTokens.get(token));
+      const old = refreshTokens.get(token);
+      if (old?.clientId !== form.get("client_id")) return invalid();
+      accessTokens.delete(old.access);
       refreshTokens.delete(token);
       return res.writeHead(200).end();
     }
 
     if (url.pathname === "/v1/models" || url.pathname === "/v1/responses") {
       const token = req.headers.authorization?.slice("Bearer ".length);
-      if (!token || accessTokens.get(token) <= Date.now() || !accessTokens.has(token)) return json({ error: "unauthorized" }, 401);
+      const connection = accessTokens.get(token);
+      if (!connection || connection.expiresAt <= Date.now()) return json({ error: "unauthorized" }, 401);
       if (url.pathname === "/v1/models" && req.method === "GET") {
         counters.models++;
-        return json({ models: [{ slug: model, visibility: "list" }, { slug: "hidden", visibility: "hidden" }] });
+        behavior.lastModelClient = connection.clientId;
+        return json({ models: [{ slug: model, display_name: "Fixture Text", visibility: "list" }, { slug: "hidden", visibility: "hidden" }] });
       }
       if (url.pathname === "/v1/responses" && req.method === "POST") {
         const input = JSON.parse(await body());
         if (input.model !== model || input.store !== false || input.stream !== true ||
-            input.input?.[0]?.role !== "user" || typeof input.input[0].content !== "string") return invalid();
+            !Array.isArray(input.input) || !input.input.length || input.input.some(message =>
+              !["user", "assistant", "developer"].includes(message?.role) || typeof message.content !== "string")) {
+          return invalid();
+        }
         counters.responses++;
+        behavior.lastInput = input.input;
+        behavior.lastInstructions = input.instructions;
         res.writeHead(200, { "content-type": "text/event-stream" });
+        if (behavior.responseGate) {
+          res.flushHeaders();
+          behavior.onResponseWaiting();
+          await behavior.responseGate;
+        }
         const frame = data => "data: " + JSON.stringify(data) + "\r\n\r\n";
         const delta = Buffer.from(frame({ type: "response.output_text.delta", delta: "模拟" }));
         const split = delta.indexOf(Buffer.from("模")) + 1;
@@ -172,14 +207,10 @@ export async function startFixture() {
   });
   return {
     counters,
+    behavior,
     close: () => new Promise(resolve => {
       server.close(resolve);
       server.closeAllConnections();
     }),
   };
-}
-
-if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
-  await startFixture();
-  console.log("Local OAuth fixture listening at " + issuer);
 }

@@ -52,41 +52,53 @@ export async function consumeAttempt(validate) {
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+const keyName = "profiles-key:v2";
+const profilesName = "profiles:v2";
+const oldSession = "session:openai";
+const oldKey = "session-key:openai";
+const oldRegistration = "openai-registration";
 
-async function sessionKey(mode, create = false) {
-  const name = "session-key:" + mode;
-  let { [name]: bytes } = await chrome.storage.session.get(name);
-  if (!bytes && create) {
-    bytes = Array.from(crypto.getRandomValues(new Uint8Array(32)));
-    await chrome.storage.session.set({ [name]: bytes });
-  }
-  if (bytes) return crypto.subtle.importKey("raw", Uint8Array.from(bytes), "AES-GCM", false, ["encrypt", "decrypt"]);
-}
-
-export async function loadSession(mode) {
-  const name = "session:" + mode;
-  const envelope = await readRecord(name);
-  if (!envelope) return;
-  const key = await sessionKey(mode);
-  if (!key) {
-    await removeRecord(name);
-    return;
-  }
+async function unseal(name, key, envelope) {
   const algorithm = { name: "AES-GCM", iv: envelope.iv, additionalData: encoder.encode(name) };
   const plaintext = await crypto.subtle.decrypt(algorithm, key, envelope.ciphertext);
   return JSON.parse(decoder.decode(plaintext));
 }
 
-export async function saveSession(mode, session) {
-  const name = "session:" + mode;
-  const key = await sessionKey(mode, true);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const algorithm = { name: "AES-GCM", iv, additionalData: encoder.encode(name) };
-  const ciphertext = await crypto.subtle.encrypt(algorithm, key, encoder.encode(JSON.stringify(session)));
-  await writeRecord(name, { iv, ciphertext });
+export async function loadProfiles() {
+  const envelope = await readRecord(profilesName);
+  if (envelope) return unseal(profilesName, await readRecord(keyName), envelope);
+
+  const registration = await readRecord(oldRegistration);
+  if (!registration) return { profiles: [], activeProfileId: undefined };
+  const legacyEnvelope = await readRecord(oldSession);
+  const { [oldKey]: bytes } = await chrome.storage.session.get(oldKey);
+  let session;
+  if (legacyEnvelope && bytes) {
+    const key = await crypto.subtle.importKey("raw", Uint8Array.from(bytes), "AES-GCM", false, ["decrypt"]);
+    session = await unseal(oldSession, key, legacyEnvelope);
+  }
+  const id = crypto.randomUUID();
+  const state = {
+    activeProfileId: id,
+    profiles: [{ ...registration, id, label: "ChatGPT", status: session ? "connected" : "disconnected", session }],
+  };
+  await saveProfiles(state, true);
+  await chrome.storage.session.remove(oldKey);
+  return state;
 }
 
-export async function removeSession(mode) {
-  await chrome.storage.session.remove("session-key:" + mode);
-  await removeRecord("session:" + mode);
+export async function saveProfiles(state, migrate = false) {
+  const storedKey = await readRecord(keyName);
+  const key = storedKey ?? await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const algorithm = { name: "AES-GCM", iv, additionalData: encoder.encode(profilesName) };
+  const ciphertext = await crypto.subtle.encrypt(algorithm, key, encoder.encode(JSON.stringify(state)));
+  await record("readwrite", store => {
+    if (!storedKey) store.add(key, keyName);
+    if (migrate) {
+      store.delete(oldSession);
+      store.delete(oldRegistration);
+    }
+    return store.put({ iv, ciphertext }, profilesName);
+  });
 }

@@ -1,18 +1,18 @@
-import { defaultLivePort, defaultMockPort } from "./protocol.js";
+import { createChatGPT, DEFAULT_SIWC_PORT } from "./siwc/client.js";
 
+const siwc = createChatGPT();
 const status = document.querySelector("#status");
 const output = document.querySelector("#output");
-const mode = document.querySelector("#mode");
 const port = document.querySelector("#port");
 const model = document.querySelector("#model");
 const prompt = document.querySelector("#prompt");
-const start = document.querySelector("#start");
+const profiles = document.querySelector("#profile");
+const cancelSignIn = document.querySelector("#cancel-sign-in");
+const stopResponse = document.querySelector("#stop-response");
+let state;
+let generation;
 
-async function send(type, fields = {}, provider = mode.value) {
-  const reply = await chrome.runtime.sendMessage({ type, mode: provider, ...fields });
-  if (reply.error) throw new Error(reply.error);
-  return reply.result;
-}
+port.value = DEFAULT_SIWC_PORT;
 
 async function run(operation) {
   try {
@@ -22,63 +22,63 @@ async function run(operation) {
   }
 }
 
-async function showStatus() {
-  const selected = mode.value;
-  const state = await send("status", {}, selected);
-  if (mode.value !== selected) return;
-  status.textContent = selected === "mock"
-    ? state.connected ? "模拟会话已连接" : "等待模拟授权"
-    : state.connected ? "OpenAI 会话已连接" : "等待 OpenAI 授权";
+async function showSession(session) {
+  if (state?.profileId !== session.profileId || !session.sharing) model.replaceChildren();
+  state = session;
+  const labels = {
+    disconnected: "等待 OpenAI 授权",
+    connecting: "请在新标签页完成授权",
+    reauth_required: "OpenAI 授权已失效，请重新授权",
+    connected: session.sharing ? "OpenAI 会话已连接" : "账号已连接，尚未授予套餐用量权限",
+  };
+  status.textContent = labels[session.status];
+  cancelSignIn.hidden = session.status !== "connecting";
+  const accounts = await siwc.listProfiles();
+  if (state !== session) return;
+  profiles.replaceChildren(...accounts.map(({ id, label }) => new Option(label, id)));
+  if (session.profileId) profiles.value = session.profileId;
 }
 
-mode.onchange = () => run(async () => {
-  const live = mode.value === "openai";
-  port.value = live ? defaultLivePort : defaultMockPort;
-  prompt.value = live ? "Reply with exactly: SIWC OK" : "请返回一条模拟结果";
-  start.textContent = live ? "打开 OpenAI 授权页" : "打开模拟授权页";
-  document.querySelector("#notice").textContent = live
-    ? "本实验使用你的 ChatGPT 套餐授权。登录和同意在 OpenAI 页面完成，推理需要另行点击发送。"
-    : "模拟模式只使用测试凭证。";
-  model.replaceChildren();
-  output.textContent = "";
-  await showStatus();
-});
-
-start.onclick = () => run(async () => {
-  const selected = mode.value;
+async function startSignIn(newProfile = false) {
   if (!port.reportValidity()) return;
-  await send("start", { port: port.valueAsNumber }, selected);
-  if (mode.value === selected) status.textContent = "请在新标签页完成授权";
-});
+  await siwc.signIn({ port: port.valueAsNumber, newProfile, reconsent: !newProfile && state?.status === "connected" && !state.sharing });
+}
+
+document.querySelector("#start").onclick = () => run(() => startSignIn());
+document.querySelector("#new-profile").onclick = () => run(() => startSignIn(true));
+cancelSignIn.onclick = () => siwc.cancelSignIn();
+profiles.onchange = () => run(() => siwc.selectProfile(profiles.value));
 
 document.querySelector("#models").onclick = () => run(async () => {
-  const selected = mode.value;
-  const models = await send("models", {}, selected);
-  if (mode.value !== selected) return;
-  model.replaceChildren(...models.map(slug => new Option(slug, slug)));
-  output.textContent = models.join("\n");
+  const models = await siwc.listModels();
+  model.replaceChildren(...models.map(({ slug, displayName }) => new Option(displayName, slug)));
+  output.textContent = models.map(({ slug }) => slug).join("\n");
 });
 
 document.querySelector("#disconnect").onclick = () => run(async () => {
-  const selected = mode.value;
-  const { revoked } = await send("disconnect", {}, selected);
-  if (mode.value !== selected) return;
-  model.replaceChildren();
-  output.textContent = revoked ? "授权已断开" : "已移除本地凭证，远端撤销未确认";
-  await showStatus();
+  await siwc.disconnect();
+  output.textContent = "授权已断开";
 });
 
 document.querySelector("form").onsubmit = event => {
   event.preventDefault();
+  if (generation) return;
   void run(async () => {
-    output.textContent = "接收流式结果…";
-    const selected = mode.value;
-    const text = await send("response", { model: model.value, prompt: prompt.value }, selected);
-    if (mode.value === selected) output.textContent = text;
+    generation = new AbortController();
+    stopResponse.hidden = false;
+    output.textContent = "";
+    try {
+      const { text } = await siwc.streamResponse({
+        model: model.value, input: prompt.value, signal: generation.signal,
+        onDelta: delta => { output.textContent += delta; },
+      });
+      output.textContent = text;
+    } finally {
+      generation = undefined;
+      stopResponse.hidden = true;
+    }
   });
 };
 
-chrome.runtime.onMessage.addListener(message => {
-  if (message.type === "sessionChanged" && message.mode === mode.value) void run(showStatus);
-});
-void run(showStatus);
+stopResponse.onclick = () => generation?.abort();
+siwc.subscribe(session => void run(() => showSession(session)));

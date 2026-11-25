@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { connect } from "node:net";
-import { authorize } from "./extension/protocol.js";
+import { authorize } from "./extension/siwc/protocol.js";
 
 const hostId = "urn:uuid:" + crypto.randomUUID();
 for (const port of [51455, 53601]) {
@@ -12,7 +12,7 @@ for (const port of [51455, 53601]) {
     });
     socket.once("error", error => error.code === "ECONNREFUSED" ? resolve() : reject(error));
   });
-  const { url, transaction } = await authorize(hostId, { mode: "openai", port });
+  const { url, transaction } = await authorize(hostId, { appName: "SIWC Chrome MVP", port });
   const result = execFileSync("curl", [
     "-sS", "--max-time", "12", "-o", "/dev/null", "-w", "%{http_code}\n%{redirect_url}", url,
   ], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
