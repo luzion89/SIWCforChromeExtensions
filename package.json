@@ -1,0 +1,16 @@
+{
+  "name": "siwc-chrome-feasibility",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "mock": "node mvp/mock.mjs",
+    "preflight": "node mvp/openai-preflight.mjs",
+    "test": "node --test mvp/browser.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "devDependencies": {
+    "puppeteer-core": "25.18.1"
+  }
+}
