@@ -13,7 +13,7 @@ body { margin: 0; }
 .mark { width: 29px; height: 29px; border-radius: 9px; background: var(--blue); display: flex; gap: 2px; justify-content: center; align-items: center; }
 .mark i { width: 3px; height: 10px; border-radius: 2px; background: white; transform: skew(-13deg); }
 .mark i:nth-child(2) { height: 18px; } .mark i:last-child { height: 13px; }
-a { color: var(--blue); font-size: 13px; font-weight: 600; text-decoration: none; } a:hover { text-decoration: underline; }
+#language { color: var(--blue); }
 .hero { position: relative; isolation: isolate; overflow: hidden; padding: 29px 38px 31px; border-radius: 22px; color: #fff; background: linear-gradient(110deg,#242657 12%,#343889 54%,#5d59bc 100%); }
 .hero p { margin: 0; color: #e1e3ff; }
 .hero .eyebrow { font: 600 11px/1.5 ui-monospace, monospace; letter-spacing: .16em; color: #c1c5ff; }
@@ -45,7 +45,7 @@ button.primary { background: var(--blue); border-color: var(--blue); color: whit
 button.primary:hover:enabled { background: #353599; }
 button:disabled, select:disabled { cursor: default; background: #f4f4f9; color: #737588; border-color: #e4e4ee; }
 button.primary:disabled { color: #eeedff; background: #7777ae; border-color: #7777ae; }
-button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #8b92ff; outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 3px solid #8b92ff; outline-offset: 2px; }
 .wide { width: 100%; margin-top: 12px; }
 .account-actions { margin-top: 9px; } .account-actions:empty { display: none; }
 .settings, .options { border-top: 1px solid #eeeeF5; margin-top: 16px; padding-top: 12px; }

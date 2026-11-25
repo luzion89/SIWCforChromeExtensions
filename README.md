@@ -4,7 +4,7 @@
 
 这个项目把 Sign in with ChatGPT（SIWC）的本地 SDK 接口适配到 Chrome Manifest V3（MV3）。宿主扩展可以让用户连接 ChatGPT 账号，并在用户同意后使用其 ChatGPT 套餐查询可用模型和流式生成文本。登录、凭证管理、续期和 API 调用都在扩展内运行，无需额外的本机应用、服务器或开发者 API key。
 
-项目提供两个独立发行版。开发宿主扩展请选 **SIWC SDK**，体验完整界面请选 **SIWC Studio**。演示扩展随包包含 SDK，直接使用你的 ChatGPT 账号和套餐授权连接 OpenAI。 [官方 SIWC 开发指南](https://developers.openai.com/siwc/token-sharing-open-source)
+每个发行版包含两个独立的 ZIP 附件。开发宿主扩展请选 **SIWC SDK**，体验完整界面请选 **SIWC Studio**。演示扩展随包包含 SDK，直接使用你的 ChatGPT 账号和套餐授权连接 OpenAI。 [官方 SIWC 开发指南](https://developers.openai.com/siwc/token-sharing-open-source)
 
 ## 在你的扩展中使用
 
@@ -17,10 +17,10 @@
 | [`siwc/client.js`](siwc/client.js) 和 [类型声明](siwc/client.d.ts) | 宿主页面调用入口，提供授权、状态订阅、账号切换、模型列表和流式推理。 |
 | [`siwc/background.js`](siwc/background.js) 和 [后台配置类型](siwc/background.d.ts) | Service Worker 接入，以及授权事务、账号和请求生命周期管理。 |
 | [`siwc/provider.js`](siwc/provider.js)、[`siwc/callback.html`](siwc/callback.html) 和 [`siwc/store.js`](siwc/store.js) | OpenAI 协议和调用、扩展内的回调页和 IndexedDB 凭证存储。 |
-| [`demo/`](demo) | SIWC Studio 演示扩展源码。演示发行版包含这些文件和配套 SDK。 |
+| [`demo/`](demo) | SIWC Studio 演示扩展源码。演示 ZIP 包含这些文件和配套 SDK。 |
 | [`scripts/package.py`](scripts/package.py) | 使用 Python 3 标准库分别打包 SDK 和演示扩展。 |
 
-## 选择发行版
+## 下载
 
 | 在 Releases 中下载 | 用法 |
 | --- | --- |
@@ -31,7 +31,7 @@
 
 ## 使用 SIWC Studio
 
-使用桌面 Chrome 121 或更新版本。模型可用性由 OpenAI 按账号、地区和工作区决定。
+使用桌面 Chrome 121 或更新版本。模型可用性由 OpenAI 按账号、地区和工作区决定。点击右上角的 **English** 或 **简体中文** 可随时切换界面语言。
 
 ### 加载扩展
 
@@ -171,7 +171,7 @@ document.querySelector("#send").onclick = async () => {
 | `sendHostId` | 注册时始终发送本次扩展安装持久化的 host ID。 |
 | `id_token_hint`、旧 localhost 注册迁移和 `LoginProfile.pending` | 仅列出已经换码并通过验证的账号。回访使用已验证的注册 ID。当前省略历史 ID token 提示，也未迁移官方 SDK 的 localhost 注册或暂存账号。 |
 | Worker 生命周期 | 增量和取消通过扩展消息端口传输。调用页面关闭或 Worker 中断时，本次推理结束，由宿主处理。 |
-| `@siwc/react` 和设计资源 | SDK 提供逻辑和状态，登录、账号选择和套餐用量界面由宿主实现。 |
+| `@siwc/react` 和设计资源 | SDK 提供逻辑和状态，登录、账号选择和套餐授权状态界面由宿主实现。 |
 
 ### 错误与恢复
 
@@ -211,7 +211,7 @@ DNR 回环桥接参考了 Loom.js 的 Codex 实验，本项目接入的是 SIWC 
 
 ## 界面指南与预览限制
 
-- 宿主负责显示当前 ChatGPT 账号、套餐用量状态和「管理用量」入口。遇到限额时，可引导用户在 ChatGPT 设置中管理授权和用量。 [官方 UI/UX 指南](https://developers.openai.com/siwc/ui-ux-guidelines) · [ChatGPT 用量设置](https://chatgpt.com/settings/usage)
+- `sharing` 表示当前账号已授权使用套餐。SDK 提供授权状态、可用模型和流式文本，套餐用量和剩余额度由 ChatGPT 设置页面提供。 [OpenAI 用量说明](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions#tracking-usage)
 - 当前接口支持文本。多轮对话由宿主传入消息历史，图片、工具调用和会话历史管理暂未提供。模型查询与推理的请求时限分别为 15 秒和 90 秒，同时受 MV3 Worker 生命周期约束。 [SIWC 预览限制](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations) · [Chrome Worker 生命周期](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)
 - 授权事务有效期为 10 分钟，浏览器重启后需重新发起尚未完成的授权。更换 Chrome 配置或扩展 ID、卸载扩展、清除扩展数据可能使已保存的会话无法恢复。
 - OpenAI 的公开指南要求使用回环监听，并明确要求 token 保存在受保护的运行时存储、避开浏览器存储。本项目的 DNR 桥接和 IndexedDB 密文持久化属于兼容性实验，正式分发使用前需确认 OpenAI 对该实现的支持及适用条款。 [注册与回调指南](https://developers.openai.com/siwc/token-sharing-open-source/sign-in) · [官方凭证存储要求](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions#credential-security) · [SIWC 服务条款](https://openai.com/policies/sign-in-with-chatgpt-terms/)

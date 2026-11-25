@@ -4,7 +4,7 @@
 
 This project adapts the Sign in with ChatGPT (SIWC) local SDK interface to Chrome Manifest V3 (MV3). A host extension can connect a user's ChatGPT account and, with their consent, use their ChatGPT plan to list available models and stream text. Sign-in, credential management, refresh, and API calls run inside the extension without a companion app, a server you maintain, or a developer API key.
 
-This independent browser adaptation ships in two releases. Choose **SIWC SDK** to embed the modules in your extension or **SIWC Studio** for the ready-to-load demo. The demo connects to OpenAI with the permissions granted by your ChatGPT account. [Official SIWC developer guide](https://developers.openai.com/siwc/token-sharing-open-source)
+Each release of this independent browser adaptation contains two ZIP attachments. Choose **SIWC SDK** to embed the modules in your extension or **SIWC Studio** for the ready-to-load demo. The demo connects to OpenAI with the permissions granted by your ChatGPT account. [Official SIWC developer guide](https://developers.openai.com/siwc/token-sharing-open-source)
 
 ## Use it in your extension
 
@@ -17,10 +17,10 @@ Bundle [`siwc/`](siwc) with your extension, register it in the extension service
 | [`siwc/client.js`](siwc/client.js) and [type declarations](siwc/client.d.ts) | Page client for sign-in, session subscriptions, account switching, model discovery, and streaming. |
 | [`siwc/background.js`](siwc/background.js) and [background options](siwc/background.d.ts) | Service worker integration and lifecycle management for sign-in, profiles, and requests. |
 | [`siwc/provider.js`](siwc/provider.js), [`siwc/callback.html`](siwc/callback.html), and [`siwc/store.js`](siwc/store.js) | OpenAI protocol and requests, the extension callback page, and IndexedDB credential storage. |
-| [`demo/`](demo) | SIWC Studio extension source. The demo release includes these files and the SDK. |
+| [`demo/`](demo) | SIWC Studio extension source. The demo ZIP includes these files and the SDK. |
 | [`scripts/package.py`](scripts/package.py) | Packages the SDK and demo separately using the Python 3 standard library. |
 
-## Choose a release
+## Downloads
 
 | Download from Releases | Use |
 | --- | --- |
@@ -31,7 +31,7 @@ To build both ZIPs from a checkout, run `python3 scripts/package.py`. The archiv
 
 ## Use SIWC Studio
 
-Use desktop Chrome 121 or later. OpenAI determines model availability by account, region, and workspace.
+Use desktop Chrome 121 or later. OpenAI determines model availability by account, region, and workspace. Click **English** or **简体中文** in the top right to switch languages at any time.
 
 ### Load the extension
 
@@ -42,21 +42,21 @@ Extract the **SIWC Studio** release attachment. Open `chrome://extensions`, enab
 
 ### Sign in and grant access
 
-Click **使用 ChatGPT 登录** (Sign in with ChatGPT), choose your account and workspace on OpenAI's page, and grant plan usage. On return, the account card shows **已连接** (Connected). Expand **授权选项** (Authorization options) to set a callback port or an account label.
+Click **Sign in with ChatGPT**, choose your account and workspace on OpenAI's page, and grant plan usage. On return, the account card shows **Connected**. Expand **Authorization options** to set a callback port or an account label.
 
 <!-- screenshot: openai-consent -->
 > Screenshot pending — OpenAI's plan usage consent page. Cover any account details and address bar parameters in screenshots for publication.
 
 ### List available models
 
-Click **获取模型** (Get models) and select a model available to the current account. For identity-only access, click **授权套餐用量** (Grant plan usage). Fetch the list again after switching accounts.
+Click **Get models** and select a model available to the current account. For identity-only access, click **Grant plan access**. Fetch the list again after switching accounts.
 
 <!-- screenshot: model-list -->
 > Screenshot pending — The expanded model picker.
 
 ### Send text and watch the response stream
 
-Enter a message and click **发送消息** (Send). The response panel shows incoming text, the delta count and completion status. Stop an active stream to keep the partial output. **生成选项** (Generation options) supports instructions and conversation context. **新对话** (New conversation) clears the page’s current conversation.
+Enter a message and click **Send message**. The response panel shows incoming text, the delta count and completion status. Stop an active stream to keep the partial output. **Generation options** supports instructions and conversation context. **New conversation** clears the page’s current conversation.
 
 <!-- screenshot: streaming-demo -->
 > Screenshot pending — The selected model, prompt, and generated response.
@@ -171,7 +171,7 @@ The page client implements nine core methods with the same names as the official
 | `sendHostId` | Registration always sends the persisted host ID for this extension installation. |
 | `id_token_hint`, legacy localhost migration, and `LoginProfile.pending` | Only accounts that have completed code exchange and verification appear in the list. Returning sign-ins reuse verified registration IDs. The adaptation omits the previous ID token hint and migration of upstream localhost or pending registrations. |
 | Worker lifecycle | Streaming deltas and cancellation travel over an extension message port. If the calling page closes or the worker is interrupted, the host handles the ended request. |
-| `@siwc/react` and design assets | The SDK supplies logic and state. The host builds the sign-in, account selection, and plan usage UI. |
+| `@siwc/react` and design assets | The SDK supplies logic and state. The host builds the UI for sign-in, account selection, and plan authorization status. |
 
 ### Errors and recovery
 
@@ -211,7 +211,7 @@ The SDK manages credential storage. The worker saves credentials in extension In
 
 ## UI guidelines and preview limitations
 
-- Show the active ChatGPT account, plan usage state, and a **Manage usage** action in the host. When a limit is reached, direct the user to ChatGPT Settings to manage access and usage. [Official UI/UX guidelines](https://developers.openai.com/siwc/ui-ux-guidelines) · [ChatGPT usage settings](https://chatgpt.com/settings/usage)
+- `sharing` indicates that the active account granted plan access. The SDK exposes authorization state, available models, and streamed text. ChatGPT Settings shows plan usage and remaining allowance. [OpenAI usage guidance](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions#tracking-usage)
 - The interface supports text. For multi-turn interactions, the host sends message history. The current interface omits images, tools, and history management. Model lookup and inference time out after 15 and 90 seconds respectively and are subject to the MV3 worker lifecycle. [SIWC preview limitations](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations) · [Chrome worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)
 - Authorization transactions expire after 10 minutes. Restarting Chrome interrupts authorization in progress. Changing the Chrome profile or extension ID, uninstalling the extension, or clearing its data can make a saved session unavailable.
 - OpenAI's public guide specifies a loopback listener and says to keep tokens in protected runtime storage and out of browser storage. This project's DNR bridge and encrypted IndexedDB persistence are compatibility experiments. Confirm OpenAI's support and the applicable terms before distributing this implementation for use. [Registration and callback guide](https://developers.openai.com/siwc/token-sharing-open-source/sign-in) · [Official credential storage guidance](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions#credential-security) · [SIWC terms](https://openai.com/policies/sign-in-with-chatgpt-terms/)
