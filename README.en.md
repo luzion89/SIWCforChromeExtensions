@@ -4,7 +4,7 @@
 
 This project adapts the Sign in with ChatGPT (SIWC) local SDK interface to Chrome Manifest V3 (MV3). A host extension can connect a user's ChatGPT account and, with their consent, use their ChatGPT plan to list available models and stream text. Sign-in, credential management, refresh, and API calls run inside the extension without a companion app, a server you maintain, or a developer API key.
 
-Each release of this independent browser adaptation contains two ZIP attachments. Choose **SIWC SDK** to embed the modules in your extension or **SIWC Studio** for the ready-to-load demo. The demo connects to OpenAI with the permissions granted by your ChatGPT account. [Official SIWC developer guide](https://developers.openai.com/siwc/token-sharing-open-source)
+**SIWC Studio is a demo extension built to show how to use the SIWC SDK.** It bundles the SDK and demonstrates ChatGPT plan authorization, model discovery, and streaming responses. Each release provides two ZIPs, one for integrating the SDK and one for trying the demo. [Official SIWC developer guide](https://developers.openai.com/siwc/token-sharing-open-source)
 
 ## Use it in your extension
 
@@ -26,11 +26,13 @@ Bundle [`siwc/`](siwc) with your extension, register it in the extension service
 | **SIWC SDK** · `siwc-sdk-<version>.zip` | Extract and copy the included `siwc/` folder into your host extension. |
 | **SIWC Studio** · `siwc-demo-<version>.zip` | Extract into its own directory. The ZIP includes a root manifest, the Studio interface, and the matching SDK. |
 
-## Use SIWC Studio
+## Run the SIWC Studio demo
 
 Use desktop Chrome 121 or later. OpenAI determines model availability by account, region, and workspace. Click **English** or **简体中文** in the top right to switch languages at any time.
 
-Microsoft Edge has been checked for unpacked installation, language switching, and opening the OpenAI sign-in page. End-to-end authorization, model discovery, and streaming still need to be verified in Edge.
+**The end-to-end Chrome test passed.** Using a real ChatGPT plan, Studio completed OpenAI authorization and its callback, found 10 available models, and received a complete streamed reply from GPT-6.2-Sol in 37 chunks. The screenshots below show that run.
+
+Testing in Microsoft Edge covered unpacked installation, language switching, and opening the OpenAI authorization page.
 
 ### Load the extension
 

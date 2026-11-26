@@ -4,7 +4,7 @@
 
 这个项目把 Sign in with ChatGPT（SIWC）的本地 SDK 接口适配到 Chrome Manifest V3（MV3）。宿主扩展可以让用户连接 ChatGPT 账号，并在用户同意后使用其 ChatGPT 套餐查询可用模型和流式生成文本。登录、凭证管理、续期和 API 调用都在扩展内运行，无需额外的本机应用、服务器或开发者 API key。
 
-每个发行版包含两个独立的 ZIP 附件。开发宿主扩展请选 **SIWC SDK**，体验完整界面请选 **SIWC Studio**。演示扩展随包包含 SDK，直接使用你的 ChatGPT 账号和套餐授权连接 OpenAI。 [官方 SIWC 开发指南](https://developers.openai.com/siwc/token-sharing-open-source)
+**SIWC Studio 是为展示 SIWC SDK 用法而推出的 Demo 扩展。** 它内置 SDK，演示如何用 ChatGPT 套餐完成账号授权、查询模型和生成流式回复。每个发行版都提供两个 ZIP，分别供开发者集成 SDK 和体验这个 Demo。 [官方 SIWC 开发指南](https://developers.openai.com/siwc/token-sharing-open-source)
 
 ## 在你的扩展中使用
 
@@ -26,11 +26,13 @@
 | **SIWC SDK** · `siwc-sdk-<version>.zip` | 解压后，将其中的 `siwc/` 目录复制进宿主扩展。 |
 | **SIWC Studio** · `siwc-demo-<version>.zip` | 解压到单独的目录。ZIP 根目录包含扩展 manifest、Studio 界面和配套 SDK。 |
 
-## 使用 SIWC Studio
+## 运行 SIWC Studio Demo
 
 使用桌面 Chrome 121 或更新版本。模型可用性由 OpenAI 按账号、地区和工作区决定。点击右上角的 **English** 或 **简体中文** 可随时切换界面语言。
 
-Microsoft Edge 已验证解压安装、语言切换和打开 OpenAI 授权页。完整授权、模型查询和流式回复的 Edge 实测仍待完成。
+**Chrome 端到端实测通过。** 使用真实 ChatGPT 套餐完成了 OpenAI 授权和回调、模型查询及流式回复。Studio 查到 10 个可用模型，并使用 GPT-6.2-Sol 完成了一次流式回复，共收到 37 段增量。下方截图来自这次实测。
+
+Microsoft Edge 的实测范围包括解压安装、语言切换和打开 OpenAI 授权页。
 
 ### 加载扩展
 
