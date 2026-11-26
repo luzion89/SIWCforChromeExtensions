@@ -32,7 +32,7 @@ Use desktop Chrome 121 or later. OpenAI determines model availability by account
 
 **The end-to-end Chrome test passed.** Using a real ChatGPT plan, Studio completed OpenAI authorization and its callback, found 10 available models, and received a complete streamed reply from GPT-6.2-Sol in 37 chunks. The screenshots below show that run.
 
-Testing in Microsoft Edge covered unpacked installation, language switching, and opening the OpenAI authorization page.
+**The end-to-end Microsoft Edge test passed.** Studio v0.2.3 ran in desktop Edge 158.0.4370.33, completed live OpenAI authorization and its callback, found 10 available models, and received a complete GPT-6.2-Sol streamed reply in 27 chunks.
 
 ### Load the extension
 
