@@ -46,21 +46,23 @@ Microsoft Edge 已验证解压安装、语言切换和打开 OpenAI 授权页。
 点击「使用 ChatGPT 登录」，在 OpenAI 页面选择账号和工作区，并授予套餐用量权限。返回工作台后，「账号连接」显示「已连接」。通过「授权选项」可指定回调端口和账号备注。
 
 <!-- screenshot: openai-consent -->
-![从 SIWC Studio 打开的 OpenAI 登录入口](docs/images/studio-sign-in.png)
+![Chrome 中的 OpenAI 套餐授权确认](docs/images/studio-chrome-plan-access.png)
+
+![Chrome 中的授权成功回调](docs/images/studio-chrome-authorized.png)
 
 ### 查看可用模型
 
 点击「获取模型」，从下拉菜单中选择当前账号可用的模型。若仅授予了身份权限，点击「授权套餐用量」补授权限。切换账号后请重新获取模型。
 
 <!-- screenshot: model-list -->
-> 截图待补：展开的模型下拉菜单。
+![Studio 查询到 10 个可用模型](docs/images/studio-chrome-models.png)
 
 ### 发送文本并观察流式输出
 
 输入消息，点击「发送消息」。在「流式回复」中可以看到实际增量、完成状态和中途停止后保留的文本。「生成选项」支持模型指令和多轮上下文。「新对话」清空当前页面的对话历史。
 
 <!-- screenshot: streaming-demo -->
-> 截图待补：所选模型、输入的消息和生成结果。
+![Studio 流式回复完成并显示增量数](docs/images/studio-chrome-stream.png)
 
 ## 集成到宿主扩展
 

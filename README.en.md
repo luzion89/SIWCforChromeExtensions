@@ -46,21 +46,23 @@ Extract the **SIWC Studio** release attachment. Open `chrome://extensions`, enab
 Click **Sign in with ChatGPT**, choose your account and workspace on OpenAI's page, and grant plan usage. On return, the account card shows **Connected**. Expand **Authorization options** to set a callback port or an account label.
 
 <!-- screenshot: openai-consent -->
-![OpenAI sign-in opened from SIWC Studio](docs/images/studio-sign-in.png)
+![OpenAI plan consent in Chrome](docs/images/studio-chrome-plan-access.png)
+
+![Successful authorization callback in Chrome](docs/images/studio-chrome-authorized.png)
 
 ### List available models
 
 Click **Get models** and select a model available to the current account. For identity-only access, click **Grant plan access**. Fetch the list again after switching accounts.
 
 <!-- screenshot: model-list -->
-> Screenshot pending — The expanded model picker.
+![Studio found 10 available models in Chrome](docs/images/studio-chrome-models.png)
 
 ### Send text and watch the response stream
 
 Enter a message and click **Send message**. The response panel shows incoming text, the delta count and completion status. Stop an active stream to keep the partial output. **Generation options** supports instructions and conversation context. **New conversation** clears the page’s current conversation.
 
 <!-- screenshot: streaming-demo -->
-> Screenshot pending — The selected model, prompt, and generated response.
+![Completed streaming response and delta count in Studio](docs/images/studio-chrome-stream.png)
 
 ## Integrate with a host extension
 
